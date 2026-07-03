@@ -15,7 +15,7 @@ export default function Navbar() {
     <nav className="w-full bg-white border-b border-stone-100 py-4 px-6">
       <div className="max-w-xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-xs font-black uppercase tracking-widest text-stone-900">
-          RCC Election
+          Recruitment Coordination Committee (RCC) Elections for the Batch of 2029
         </Link>
         <div className="flex space-x-6">
           {links.map((link) => (

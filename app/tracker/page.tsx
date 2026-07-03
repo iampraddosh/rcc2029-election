@@ -75,9 +75,6 @@ export default function PublicTracker() {
     <div className="min-h-screen bg-[#FDFDFD] text-stone-900 font-sans antialiased flex flex-col justify-between">
       <main className="w-full max-w-xl mx-auto px-6 py-12 md:py-20 grow">
         <header className="mb-12 space-y-2">
-          <p className="text-[10px] font-bold tracking-[0.2em] text-stone-400 uppercase">
-            {resultsDeclared ? 'Official Notification' : 'Live Roster &bull; Batch of 2029'}
-          </p>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 uppercase">
             {resultsDeclared ? 'Elected Representatives' : 'Received Nominations'}
           </h1>

@@ -83,11 +83,8 @@ export default function UnifiedNominationForm() {
       <main className="w-full max-w-xl mx-auto px-6 py-12 md:py-20 grow">
         
         <header className="mb-12 space-y-2">
-          <p className="text-[10px] font-bold tracking-[0.2em] text-stone-400 uppercase">
-            Electoral Portal &bull; Batch of 2029
-          </p>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 uppercase">
-            RCC Nomination Window
+            RCC Nomination Form
           </h1>
           <div className="h-px bg-stone-200 w-12 pt-1" />
         </header>
@@ -259,10 +256,6 @@ export default function UnifiedNominationForm() {
           </form>
         )}
       </main>
-
-      <footer className="w-full text-center py-6 border-t border-stone-100 text-[9px] font-bold tracking-widest text-stone-400 uppercase">
-        NLU Delhi &bull; RCC Election System
-      </footer>
     </div>
   );
 }
