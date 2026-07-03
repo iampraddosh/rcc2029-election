@@ -17,11 +17,9 @@ export default function PublicTracker() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. Fetch Config to determine current phase
         const configRes = await fetch('/api/config');
         const config = await configRes.json();
         
-        // 2. Fetch data
         const res = await fetch('/api/candidates');
         const data = await res.json();
         setResultsDeclared(data.resultsDeclared || false);
@@ -31,17 +29,21 @@ export default function PublicTracker() {
         const statsData = await statsRes.json();
         setStats(statsData);
 
-        // 3. Adaptive Timer Logic
-        const NOM_END = new Date('2026-07-03T23:59:59+05:30').getTime();
-        const VOT_END = new Date('2026-07-05T18:00:00+05:30').getTime();
+        // Timestamps
+        const NOM_END = new Date('2026-07-04T16:00:00+05:30').getTime();
+        const CONCERNS_END = new Date('2026-07-04T23:59:59+05:30').getTime();
+        const VOT_END = new Date('2026-07-06T09:00:00+05:30').getTime();
 
         let target = NOM_END;
         let label = "Nominations Close";
 
-        if (!config.nomination_open && config.voting_open) {
+        if (config.concerns_open) {
+          target = CONCERNS_END;
+          label = "Concerns Deadline";
+        } else if (config.voting_open) {
           target = VOT_END;
           label = "Voting Closes";
-        } else if (!config.nomination_open && !config.voting_open) {
+        } else if (!config.nomination_open && !config.concerns_open && !config.voting_open) {
           setTimeLeft("Election Concluded");
           return;
         }
