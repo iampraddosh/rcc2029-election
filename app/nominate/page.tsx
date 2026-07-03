@@ -107,7 +107,7 @@ export default function UnifiedNominationForm() {
                   <input 
                     type="text" required value={formData.fullName}
                     onChange={e => setFormData({...formData, fullName: e.target.value})}
-                    placeholder="e.g., Praddosh S M"
+                    placeholder="YOUR NAME"
                     className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm transition-all focus:bg-white focus:border-[#800000] focus:ring-1 focus:ring-[#800000] outline-none"
                   />
                 </div>
@@ -117,7 +117,7 @@ export default function UnifiedNominationForm() {
                   <input 
                     type="text" required value={formData.rollNo}
                     onChange={e => setFormData({...formData, rollNo: e.target.value})}
-                    placeholder="e.g., 24BBA01"
+                    placeholder="LLB24XXX"
                     className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm transition-all focus:bg-white focus:border-[#800000] focus:ring-1 focus:ring-[#800000] outline-none"
                   />
                 </div>
@@ -127,7 +127,7 @@ export default function UnifiedNominationForm() {
                   <input 
                     type="email" required value={formData.emailId}
                     onChange={e => setFormData({...formData, emailId: e.target.value})}
-                    placeholder="username24@nludelhi.ac.in"
+                    placeholder="user.name24@nludelhi.ac.in"
                     className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm transition-all focus:bg-white focus:border-[#800000] focus:ring-1 focus:ring-[#800000] outline-none"
                   />
                 </div>
@@ -158,7 +158,7 @@ export default function UnifiedNominationForm() {
             {/* Section 2: Confidential Reservation Status */}
             <div className="space-y-6 pt-4 border-t border-stone-200/60">
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#800000] border-b border-stone-100 pb-2">
-                02 / Confidential Attributes
+                02 / Reservation Particulars
               </h2>
 
               <div className="bg-amber-50/50 border border-amber-200/60 p-3.5 rounded-lg text-[11px] text-amber-900 leading-relaxed font-medium">
