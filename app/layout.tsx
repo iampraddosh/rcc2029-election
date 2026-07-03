@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Navbar from "../components/Navbar"; // Ensure this points to your file
+import Navbar from "../components/Navbar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RCC Election Portal",
-  description: "Secure Recruitment Coordination Committee Election System",
+  title: "RCC 2029 - ELECTION PORTAL",
+  description: "Recruitment Coordination Committee (RCC) Elections for the Batch of 2029",
+  icons: {
+    icon: "/nlud-logo.png", // Corrected path
+  }, // Added missing closing brace here
 };
 
 export default function RootLayout({
