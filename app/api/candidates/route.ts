@@ -8,16 +8,7 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // 1. Check if the Election Commission has declared the results
-    const { data: config } = await supabase
-      .from('system_config')
-      .select('status')
-      .eq('key', 'results_declared')
-      .single();
-
-    const resultsDeclared = config?.status || false;
-
-    // 2. Fetch the candidate roster - always sorted alphabetically by name
+    // 1. Fetch Candidates sorted alphabetically
     const { data: candidates, error: candidateError } = await supabase
       .from('candidates')
       .select('full_name, roll_no, email_id')
@@ -25,8 +16,9 @@ export async function GET() {
 
     if (candidateError) return NextResponse.json({ error: candidateError.message }, { status: 500 });
 
+    // 2. Return roster. The frontend can now decide if it shows these 
+    // based on the 'voting_open' flag received from /api/config.
     return NextResponse.json({ 
-      resultsDeclared, 
       candidates 
     });
 
