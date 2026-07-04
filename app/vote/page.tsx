@@ -12,7 +12,7 @@ export default function AnonymousBallotPortal() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedVotes, setSelectedVotes] = useState<string[]>([]);
   const [voterEmail, setVoterEmail] = useState('');
-  const [voterToken, setVoterToken] = useState(''); // NEW: Token state
+  const [voterToken, setVoterToken] = useState('');
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState({ loading: false, message: '', error: false });
 
@@ -39,12 +39,11 @@ export default function AnonymousBallotPortal() {
 
   const handleSelectCandidate = (name: string) => {
     if (selectedVotes.includes(name)) {
+      // Always allow unselecting a candidate
       setSelectedVotes(selectedVotes.filter(item => item !== name));
     } else {
-      if (selectedVotes.length >= 13) {
-        alert("Vacancy limit reached: You can select a maximum of 13 candidates.");
-        return;
-      }
+      // Strict enforcement of the 13-seat ceiling
+      if (selectedVotes.length >= 13) return;
       setSelectedVotes([...selectedVotes, name]);
     }
   };
@@ -71,13 +70,12 @@ export default function AnonymousBallotPortal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: voterEmail,
-          token: voterToken.toUpperCase(), // Ensure token consistency
+          token: voterToken.toUpperCase().trim(),
           selectedCandidates: selectedVotes,
         }),
       });
 
       const result = await res.json();
-
       if (!res.ok) {
         setStatus({ loading: false, message: result.error || "Ballot submission failed.", error: true });
       } else {
@@ -102,11 +100,7 @@ export default function AnonymousBallotPortal() {
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-stone-900 font-sans antialiased flex flex-col justify-between selection:bg-[#800000] selection:text-white">
       <main className="w-full max-w-xl mx-auto px-6 py-12 md:py-20 grow">
-        
         <header className="mb-12 space-y-2">
-          <p className="text-[10px] font-bold tracking-[0.2em] text-stone-400 uppercase">
-            Electoral Vault &bull; Double-Blind Ballot Matrix
-          </p>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 uppercase">
             Cast Anonymous Vote
           </h1>
@@ -128,18 +122,22 @@ export default function AnonymousBallotPortal() {
                 <div>
                   <label className="block text-[10px] font-bold tracking-wider text-stone-500 uppercase mb-1">Institutional Email ID</label>
                   <input 
-                    type="email" required value={voterEmail}
-                    onChange={e => setVoterEmail(e.target.value)}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#800000]"
+                    type="email" 
+                    required 
+                    value={voterEmail} 
+                    onChange={e => setVoterEmail(e.target.value)} 
+                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#800000]" 
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold tracking-wider text-stone-500 uppercase mb-1">Unique Access Token</label>
                   <input 
-                    type="text" required value={voterToken}
-                    onChange={e => setVoterToken(e.target.value.toUpperCase())}
-                    placeholder="RCC-XXXXXX"
-                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm uppercase outline-none focus:border-[#800000]"
+                    type="text" 
+                    required 
+                    value={voterToken} 
+                    onChange={e => setVoterToken(e.target.value.toUpperCase())} 
+                    placeholder="RCC2029-XXXXXX" 
+                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm uppercase outline-none focus:border-[#800000]" 
                   />
                 </div>
               </div>
@@ -158,22 +156,35 @@ export default function AnonymousBallotPortal() {
 
               {candidates.length === 0 ? (
                 <div className="border border-dashed border-stone-200 rounded-xl p-8 text-center text-xs text-stone-400 font-medium">
-                  No verified candidates available.
+                  No verified candidates.
                 </div>
               ) : (
                 <div className="space-y-2.5">
                   {candidates.map((candidate, idx) => {
                     const isSelected = selectedVotes.includes(candidate.full_name);
+                    // Disable option only if 13 choices are reached and this option isn't selected
+                    const isFull = selectedVotes.length >= 13 && !isSelected;
+                    
                     return (
                       <button
-                        key={idx} type="button"
+                        key={idx} 
+                        type="button" 
+                        disabled={isFull}
                         onClick={() => handleSelectCandidate(candidate.full_name)}
                         className={`w-full p-4 flex justify-between items-center text-sm rounded-xl border transition-all ${
-                          isSelected ? 'border-[#800000] bg-[#800000]/2' : 'border-stone-200 bg-stone-50/40'
+                          isSelected 
+                            ? 'border-[#800000] bg-[#800000]/10 font-bold' 
+                            : isFull 
+                              ? 'opacity-40 border-stone-100 bg-stone-50 cursor-not-allowed' 
+                              : 'border-stone-200 bg-stone-50/40 hover:border-stone-300'
                         }`}
                       >
-                        <span className={`font-bold ${isSelected ? 'text-[#800000]' : 'text-stone-900'}`}>{candidate.full_name}</span>
-                        <span className="font-mono text-stone-400 text-[11px]">{candidate.roll_no}</span>
+                        <span className={isSelected ? 'text-[#800000]' : 'text-stone-900'}>
+                          {candidate.full_name}
+                        </span>
+                        <span className="font-mono text-stone-400 text-[11px]">
+                          {candidate.roll_no}
+                        </span>
                       </button>
                     );
                   })}
@@ -181,7 +192,11 @@ export default function AnonymousBallotPortal() {
               )}
             </div>
 
-            <button type="submit" disabled={status.loading} className="w-full bg-stone-900 text-white py-3.5 rounded-lg text-xs font-bold tracking-widest uppercase">
+            <button 
+              type="submit" 
+              disabled={status.loading} 
+              className="w-full bg-stone-900 hover:bg-stone-800 text-white py-3.5 rounded-lg text-xs font-bold tracking-widest uppercase transition-colors disabled:opacity-50"
+            >
               {status.loading ? 'Validating & Depositing...' : 'Cast Anonymous Ballot'}
             </button>
 
