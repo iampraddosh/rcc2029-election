@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    // 1. Capture the new token field
+    // 1. Capture the request data
     const { email, token, selectedCandidates } = await request.json();
 
     const supabase = createClient(
@@ -11,12 +11,13 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 2. Verify voter authorization AND match the unique token
+    // 2. Verify voter authorization using ilike for case-insensitive token matching
+    // This allows tokens to be accepted whether they are typed in upper or lower case
     const { data: voter, error: voterError } = await supabase
       .from('voters')
       .select('has_voted, access_token')
       .eq('email', email)
-      .eq('access_token', token) // Must match the token in the DB
+      .ilike('access_token', token) 
       .single();
 
     if (voterError || !voter) {
