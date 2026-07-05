@@ -1,0 +1,8 @@
+{
+  "path": "/api/declare",
+  "schedule": "1 9 6 7 *",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer super-secret-election-key-2026"
+  }
+}

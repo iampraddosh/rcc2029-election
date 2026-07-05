@@ -10,7 +10,6 @@ export async function GET() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Fetching config from DB (Used only for secondary flags, not phase timing)
     const { data, error } = await supabase.from('system_config').select('key, status');
 
     const configMap = error || !data 
@@ -27,19 +26,30 @@ export async function GET() {
     const CONCERNS_END = new Date('2026-07-04T23:59:59+05:30');
     const VOTING_END = new Date('2026-07-06T09:00:00+05:30');
 
-    // Autonomous Phase Logic: 
-    // This logic now overrides any manual status in the database to ensure 
-    // the timeline is strictly enforced by the server clock.
+    // 1. Autonomous Phase Logic
     configMap.nomination_open = now < NOMINATION_END;
     configMap.concerns_open = now >= NOMINATION_END && now < CONCERNS_END;
     configMap.voting_open = now >= CONCERNS_END && now < VOTING_END;
+    
+    // 2. Add Results Window Logic
+    // Results are pending as soon as voting ends
+    configMap.results_pending = now >= VOTING_END;
+    
+    // 3. Helper Phase String for easy frontend UI conditional rendering
+    if (configMap.nomination_open) configMap.phase = 'nominations';
+    else if (configMap.concerns_open) configMap.phase = 'concerns';
+    else if (configMap.voting_open) configMap.phase = 'voting';
+    else if (configMap.results_pending) configMap.phase = 'results_pending';
+    else configMap.phase = 'concluded';
 
     return NextResponse.json(configMap);
   } catch (err) {
     return NextResponse.json({ 
       nomination_open: false, 
       concerns_open: false, 
-      voting_open: false 
+      voting_open: false,
+      results_pending: false,
+      phase: 'error'
     });
   }
 }

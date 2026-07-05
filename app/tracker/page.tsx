@@ -7,9 +7,14 @@ interface Candidate {
   email_id: string;
 }
 
+interface ElectionResult {
+  official_statement: string;
+}
+
 export default function PublicTracker() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [resultsDeclared, setResultsDeclared] = useState(false);
+  const [officialStatement, setOfficialStatement] = useState('');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ cast: 0, total: 0 });
   const [timeLeft, setTimeLeft] = useState('');
@@ -17,19 +22,29 @@ export default function PublicTracker() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const configRes = await fetch('/api/config');
-        const config = await configRes.json();
+        const [configRes, candRes, statsRes] = await Promise.all([
+          fetch('/api/config'),
+          fetch('/api/candidates'),
+          fetch('/api/stats')
+        ]);
         
-        const res = await fetch('/api/candidates');
-        const data = await res.json();
-        setResultsDeclared(data.resultsDeclared || false);
-        if (data.candidates) setCandidates(data.candidates);
-
-        const statsRes = await fetch('/api/stats');
+        const config = await configRes.json();
+        const data = await candRes.json();
         const statsData = await statsRes.json();
+        
+        setResultsDeclared(data.resultsDeclared || false);
         setStats(statsData);
+        
+        if (data.resultsDeclared) {
+          // Fetch the official statement when declared
+          const res = await fetch('/api/results');
+          const results: ElectionResult = await res.json();
+          setOfficialStatement(results.official_statement);
+        } else {
+          setCandidates(data.candidates || []);
+        }
 
-        // Timestamps
+        // Timestamps Logic
         const NOM_END = new Date('2026-07-04T16:00:00+05:30').getTime();
         const CONCERNS_END = new Date('2026-07-04T23:59:59+05:30').getTime();
         const VOT_END = new Date('2026-07-06T09:00:00+05:30').getTime();
@@ -45,7 +60,6 @@ export default function PublicTracker() {
           label = "Voting Closes";
         } else if (!config.nomination_open && !config.concerns_open && !config.voting_open) {
           setTimeLeft("Election Concluded");
-          return;
         }
 
         const interval = setInterval(() => {
@@ -76,7 +90,7 @@ export default function PublicTracker() {
       <main className="w-full max-w-xl mx-auto px-6 py-12 md:py-20 grow">
         <header className="mb-12 space-y-2">
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 uppercase">
-            {resultsDeclared ? 'Elected Representatives' : 'Received Nominations'}
+            {resultsDeclared ? 'Elected Representatives' : 'RCC Election 2026'}
           </h1>
           
           {!resultsDeclared && !loading && (
@@ -95,6 +109,10 @@ export default function PublicTracker() {
 
         {loading ? (
           <p className="text-xs font-mono text-stone-400">Syncing electoral ledger data...</p>
+        ) : resultsDeclared ? (
+          <div className="bg-stone-50 border border-stone-200 p-8 rounded-xl shadow-sm text-stone-800 leading-relaxed whitespace-pre-line text-sm">
+            {officialStatement}
+          </div>
         ) : candidates.length === 0 ? (
           <div className="border border-dashed border-stone-200 rounded-xl p-8 text-center text-xs text-stone-400 font-medium">
             No formal records found.
