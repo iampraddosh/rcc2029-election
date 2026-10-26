@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 
 interface Candidate {
@@ -11,78 +12,137 @@ interface ElectionResult {
   official_statement: string;
 }
 
+interface ElectionConfig {
+  phase: string;
+  phase_ends_at: string | null;
+  nomination_open: boolean;
+  concerns_open: boolean;
+  voting_open: boolean;
+  results_pending: boolean;
+}
+
 export default function PublicTracker() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [resultsDeclared, setResultsDeclared] = useState(false);
   const [officialStatement, setOfficialStatement] = useState('');
   const [loading, setLoading] = useState(true);
+
   const [stats, setStats] = useState({ cast: 0, total: 0 });
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+
     async function fetchData() {
       try {
         const [configRes, candRes, statsRes] = await Promise.all([
-          fetch('/api/config'),
-          fetch('/api/candidates'),
-          fetch('/api/stats')
+          fetch('/api/config', { cache: 'no-store' }),
+          fetch('/api/candidates', { cache: 'no-store' }),
+          fetch('/api/stats', { cache: 'no-store' }),
         ]);
-        
-        const config = await configRes.json();
+
+        if (!configRes.ok || !candRes.ok || !statsRes.ok) {
+          throw new Error('Failed to fetch election data.');
+        }
+
+        const config: ElectionConfig = await configRes.json();
         const data = await candRes.json();
         const statsData = await statsRes.json();
-        
+
         setResultsDeclared(data.resultsDeclared || false);
         setStats(statsData);
-        
+
         if (data.resultsDeclared) {
-          // Fetch the official statement when declared
-          const res = await fetch('/api/results');
+          const res = await fetch('/api/results', {
+            cache: 'no-store',
+          });
+
           const results: ElectionResult = await res.json();
-          setOfficialStatement(results.official_statement);
+
+          setOfficialStatement(results.official_statement || '');
         } else {
           setCandidates(data.candidates || []);
         }
 
-        // Timestamps Logic
-        const NOM_END = new Date('2026-07-04T16:00:00+05:30').getTime();
-        const CONCERNS_END = new Date('2026-07-04T23:59:59+05:30').getTime();
-        const VOT_END = new Date('2026-07-06T09:00:00+05:30').getTime();
+        // Countdown is controlled entirely by /api/config.
+        const phaseLabels: Record<string, string> = {
+          upcoming: 'Nominations Open',
+          nominations: 'Nominations Close',
+          concerns: 'Concerns Deadline',
+          voting: 'Voting Closes',
+        };
 
-        let target = NOM_END;
-        let label = "Nominations Close";
+        const target = config.phase_ends_at
+          ? new Date(config.phase_ends_at).getTime()
+          : null;
 
-        if (config.concerns_open) {
-          target = CONCERNS_END;
-          label = "Concerns Deadline";
-        } else if (config.voting_open) {
-          target = VOT_END;
-          label = "Voting Closes";
-        } else if (!config.nomination_open && !config.concerns_open && !config.voting_open) {
-          setTimeLeft("Election Concluded");
-        }
+        if (target === null || !Number.isFinite(target)) {
+          setTimeLeft(
+            config.results_pending || data.resultsDeclared
+              ? 'Election Concluded'
+              : 'Window Closed'
+          );
+        } else {
+          const updateClock = () => {
+            const diff = target - Date.now();
 
-        const interval = setInterval(() => {
-          const now = new Date().getTime();
-          const diff = target - now;
-          if (diff <= 0) {
-            setTimeLeft('Window Closed');
-            clearInterval(interval);
-          } else {
+            if (diff <= 0) {
+              setTimeLeft('Updating...');
+
+              if (interval) {
+                clearInterval(interval);
+              }
+
+              // Fetch the next election phase from the API.
+              fetch('/api/config', { cache: 'no-store' })
+                .then((res) => res.json())
+                .then((updatedConfig: ElectionConfig) => {
+                  const nextTarget = updatedConfig.phase_ends_at
+                    ? new Date(updatedConfig.phase_ends_at).getTime()
+                    : null;
+
+                  if (nextTarget === null) {
+                    setTimeLeft(
+                      updatedConfig.results_pending
+                        ? 'Election Concluded'
+                        : 'Window Closed'
+                    );
+                  } else {
+                    window.location.reload();
+                  }
+                })
+                .catch(() => setTimeLeft('Unable to sync clock'));
+
+              return;
+            }
+
             const hrs = Math.floor(diff / (1000 * 60 * 60));
             const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            setTimeLeft(`${label}: ${hrs}h ${mins}m`);
-          }
-        }, 1000);
-        return () => clearInterval(interval);
 
+            const label = phaseLabels[config.phase] || 'Deadline';
+
+            setTimeLeft(`${label}: ${hrs}h ${mins}m`);
+          };
+
+          updateClock();
+
+          interval = setInterval(updateClock, 1000);
+        }
       } catch (err) {
-        console.error("Error syncing ledger:", err);
+        console.error('Error syncing ledger:', err);
+        setTimeLeft('Unable to sync');
       } finally {
         setLoading(false);
       }
     }
+
     fetchData();
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, []);
 
   return (
@@ -90,25 +150,40 @@ export default function PublicTracker() {
       <main className="w-full max-w-xl mx-auto px-6 py-12 md:py-20 grow">
         <header className="mb-12 space-y-2">
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 uppercase">
-            {resultsDeclared ? 'Elected Representatives' : 'RCC Election 2026'}
+            {resultsDeclared
+              ? 'By-Election Results'
+              : 'RCC By-Election 2026'}
           </h1>
-          
+
           {!resultsDeclared && !loading && (
             <div className="flex gap-4 mt-6">
               <div className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg flex-1">
-                <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">Turnout</p>
-                <p className="text-sm font-black text-[#800000]">{stats.cast} / {stats.total} Voted</p>
+                <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
+                  Turnout
+                </p>
+
+                <p className="text-sm font-black text-[#800000]">
+                  {stats.cast} / {stats.total} Voted
+                </p>
               </div>
+
               <div className="px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg flex-1">
-                <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">Clock</p>
-                <p className="text-sm font-mono font-bold text-stone-900">{timeLeft}</p>
+                <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
+                  Clock
+                </p>
+
+                <p className="text-sm font-mono font-bold text-stone-900">
+                  {timeLeft}
+                </p>
               </div>
             </div>
           )}
         </header>
 
         {loading ? (
-          <p className="text-xs font-mono text-stone-400">Syncing electoral ledger data...</p>
+          <p className="text-xs font-mono text-stone-400">
+            Syncing electoral ledger data...
+          </p>
         ) : resultsDeclared ? (
           <div className="bg-stone-50 border border-stone-200 p-8 rounded-xl shadow-sm text-stone-800 leading-relaxed whitespace-pre-line text-sm">
             {officialStatement}
@@ -121,11 +196,20 @@ export default function PublicTracker() {
           <div className="space-y-3">
             <div className="divide-y divide-stone-100 border border-stone-200/80 rounded-xl bg-stone-50/30 overflow-hidden">
               {candidates.map((candidate, idx) => (
-                <div key={idx} className="p-4 flex justify-between items-center text-sm transition hover:bg-white">
+                <div
+                  key={idx}
+                  className="p-4 flex justify-between items-center text-sm transition hover:bg-white"
+                >
                   <div className="space-y-0.5 pr-4">
-                    <p className="font-bold text-stone-900">{candidate.full_name}</p>
-                    <p className="text-[11px] font-medium text-stone-400 font-mono">{candidate.email_id}</p>
+                    <p className="font-bold text-stone-900">
+                      {candidate.full_name}
+                    </p>
+
+                    <p className="text-[11px] font-medium text-stone-400 font-mono">
+                      {candidate.email_id}
+                    </p>
                   </div>
+
                   <span className="text-[11px] font-bold text-stone-400 bg-stone-100 px-2.5 py-0.5 rounded border border-stone-200/40 shrink-0">
                     {candidate.roll_no}
                   </span>

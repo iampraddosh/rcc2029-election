@@ -14,7 +14,7 @@ export async function GET() {
       .from('system_config')
       .select('key, status');
 
-    const configMap = error || !data
+    const configMap: Record<string, any> = error || !data
       ? {}
       : data.reduce((acc: Record<string, any>, item: { key: string, status: any }) => {
           acc[item.key] = item.status;
@@ -25,11 +25,11 @@ export async function GET() {
 
     // RCC 2029 By-Election Timeline (IST)
 
-    // Nominations: 27 October, 9 AM to 28 October, 9 AM (24 hours)
+    // Nominations: 27 October, 12 AM to 28 October, 12 AM
     const NOMINATION_START = new Date('2026-10-27T00:00:00+05:30');
     const NOMINATION_END = new Date('2026-10-28T00:00:00+05:30');
 
-    // Concerns: 28 October, 9 AM to 9 PM (12 hours)
+    // Concerns: 28 October, 12 AM to 12 PM (noon)
     const CONCERNS_START = NOMINATION_END;
     const CONCERNS_END = new Date('2026-10-28T12:00:00+05:30');
 
@@ -37,7 +37,7 @@ export async function GET() {
     const WITHDRAWAL_START = CONCERNS_START;
     const WITHDRAWAL_END = CONCERNS_END;
 
-    // Voting: 28 October, 9 PM to 29 October, 9 PM (24 hours)
+    // Voting: 28 October, 12 PM to 29 October, 9 PM
     const VOTING_START = CONCERNS_END;
     const VOTING_END = new Date('2026-10-29T21:00:00+05:30');
 
@@ -73,6 +73,19 @@ export async function GET() {
       configMap.phase = 'upcoming';
     }
 
+    // 4. Deadline for Public Tracker Countdown
+
+    configMap.phase_ends_at =
+      configMap.nomination_open
+        ? NOMINATION_END.toISOString()
+        : configMap.concerns_open
+        ? CONCERNS_END.toISOString()
+        : configMap.voting_open
+        ? VOTING_END.toISOString()
+        : configMap.phase === 'upcoming'
+        ? NOMINATION_START.toISOString()
+        : null;
+
     return NextResponse.json(configMap);
 
   } catch (err) {
@@ -82,7 +95,8 @@ export async function GET() {
       withdrawal_open: false,
       voting_open: false,
       results_pending: false,
-      phase: 'error'
+      phase: 'error',
+      phase_ends_at: null
     }, { status: 500 });
   }
 }
