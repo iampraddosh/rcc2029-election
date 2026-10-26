@@ -42,8 +42,8 @@ export default function AnonymousBallotPortal() {
       // Always allow unselecting a candidate
       setSelectedVotes(selectedVotes.filter(item => item !== name));
     } else {
-      // Strict enforcement of the 13-seat ceiling
-      if (selectedVotes.length >= 13) return;
+      // Strict enforcement of the 1-seat ceiling
+      if (selectedVotes.length >= 1) return;
       setSelectedVotes([...selectedVotes, name]);
     }
   };
@@ -54,8 +54,8 @@ export default function AnonymousBallotPortal() {
       alert("Please provide both your institutional email and access token.");
       return;
     }
-    if (selectedVotes.length === 0) {
-      alert("Your ballot is empty. Please select at least 1 candidate.");
+    if (selectedVotes.length !== 1) {
+      alert("Please select exactly 1 candidate.");
       return;
     }
 
@@ -150,7 +150,7 @@ export default function AnonymousBallotPortal() {
                   02 / Ballot Construction
                 </h2>
                 <span className="text-[10px] font-mono font-bold text-stone-400 uppercase">
-                  Selected: {selectedVotes.length} / 13 Seats
+                  Selected: {selectedVotes.length} / 1 Seat
                 </span>
               </div>
 
@@ -162,8 +162,8 @@ export default function AnonymousBallotPortal() {
                 <div className="space-y-2.5">
                   {candidates.map((candidate, idx) => {
                     const isSelected = selectedVotes.includes(candidate.full_name);
-                    // Disable option only if 13 choices are reached and this option isn't selected
-                    const isFull = selectedVotes.length >= 13 && !isSelected;
+                    // Disable option only if 1 choice is reached and this option isn't selected
+                    const isFull = selectedVotes.length >= 1 && !isSelected;
                     
                     return (
                       <button

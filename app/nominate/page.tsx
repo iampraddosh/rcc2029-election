@@ -235,27 +235,55 @@ export default function UnifiedNominationForm() {
             </div>
 
             {/* Action Button */}
+
             <div className="space-y-4 pt-2">
-              <button 
-                type="submit" disabled={status.loading}
+
+              <button
+
+                type="submit"
+
+                disabled={status.loading}
+
                 className="w-full bg-stone-900 hover:bg-stone-800 text-white py-3 px-4 rounded-lg text-xs font-bold tracking-widest uppercase transition-all duration-150 active:scale-[0.99] disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed"
+
               >
+
                 {status.loading ? 'Submitting...' : 'Submit Nomination'}
+
               </button>
 
               {status.message && (
-                <div className={`p-3.5 rounded-lg text-xs font-bold tracking-wide text-center border transition-all duration-200 ${
-                  status.error 
-                    ? 'bg-red-50 border-red-200 text-red-700' 
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                }`}>
+
+                <div
+
+                  className={`p-3.5 rounded-lg text-xs font-bold tracking-wide text-center border transition-all duration-200 ${
+
+                    status.error
+
+                      ? 'bg-red-50 border-red-200 text-red-700'
+
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+
+                  }`}
+
+                >
+
                   {status.message}
+
                 </div>
+
               )}
+
             </div>
+
           </form>
+
         )}
+
       </main>
+
     </div>
+
   );
+
 }

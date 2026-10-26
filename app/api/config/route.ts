@@ -10,46 +10,79 @@ export async function GET() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { data, error } = await supabase.from('system_config').select('key, status');
+    const { data, error } = await supabase
+      .from('system_config')
+      .select('key, status');
 
-    const configMap = error || !data 
-      ? {} 
+    const configMap = error || !data
+      ? {}
       : data.reduce((acc: Record<string, any>, item: { key: string, status: any }) => {
           acc[item.key] = item.status;
           return acc;
         }, {});
 
     const now = new Date();
-    
-    // Timeline Constants (IST)
-    const NOMINATION_END = new Date('2026-07-04T16:00:00+05:30');
-    const CONCERNS_END = new Date('2026-07-04T23:59:59+05:30');
-    const VOTING_END = new Date('2026-07-06T09:00:00+05:30');
+
+    // RCC 2029 By-Election Timeline (IST)
+
+    // Nominations: 27 October, 9 AM to 28 October, 9 AM (24 hours)
+    const NOMINATION_START = new Date('2026-10-27T09:00:00+05:30');
+    const NOMINATION_END = new Date('2026-10-28T09:00:00+05:30');
+
+    // Concerns: 28 October, 9 AM to 9 PM (12 hours)
+    const CONCERNS_START = NOMINATION_END;
+    const CONCERNS_END = new Date('2026-10-28T21:00:00+05:30');
+
+    // Withdrawal and Concerns Windows run concurrently
+    const WITHDRAWAL_START = CONCERNS_START;
+    const WITHDRAWAL_END = CONCERNS_END;
+
+    // Voting: 28 October, 9 PM to 29 October, 9 PM (24 hours)
+    const VOTING_START = CONCERNS_END;
+    const VOTING_END = new Date('2026-10-29T21:00:00+05:30');
 
     // 1. Autonomous Phase Logic
-    configMap.nomination_open = now < NOMINATION_END;
-    configMap.concerns_open = now >= NOMINATION_END && now < CONCERNS_END;
-    configMap.voting_open = now >= CONCERNS_END && now < VOTING_END;
-    
-    // 2. Add Results Window Logic
-    // Results are pending as soon as voting ends
+
+    configMap.nomination_open =
+      now >= NOMINATION_START && now < NOMINATION_END;
+
+    configMap.concerns_open =
+      now >= CONCERNS_START && now < CONCERNS_END;
+
+    configMap.withdrawal_open =
+      now >= WITHDRAWAL_START && now < WITHDRAWAL_END;
+
+    configMap.voting_open =
+      now >= VOTING_START && now < VOTING_END;
+
+    // 2. Results Window Logic
+
     configMap.results_pending = now >= VOTING_END;
-    
-    // 3. Helper Phase String for easy frontend UI conditional rendering
-    if (configMap.nomination_open) configMap.phase = 'nominations';
-    else if (configMap.concerns_open) configMap.phase = 'concerns';
-    else if (configMap.voting_open) configMap.phase = 'voting';
-    else if (configMap.results_pending) configMap.phase = 'results_pending';
-    else configMap.phase = 'concluded';
+
+    // 3. Frontend Phase Helper
+
+    if (configMap.nomination_open) {
+      configMap.phase = 'nominations';
+    } else if (configMap.concerns_open) {
+      configMap.phase = 'concerns';
+    } else if (configMap.voting_open) {
+      configMap.phase = 'voting';
+    } else if (configMap.results_pending) {
+      configMap.phase = 'results_pending';
+    } else {
+      configMap.phase = 'upcoming';
+    }
 
     return NextResponse.json(configMap);
+
   } catch (err) {
-    return NextResponse.json({ 
-      nomination_open: false, 
-      concerns_open: false, 
+    return NextResponse.json({
+      nomination_open: false,
+      concerns_open: false,
+      withdrawal_open: false,
       voting_open: false,
       results_pending: false,
       phase: 'error'
-    });
+    }, { status: 500 });
   }
 }

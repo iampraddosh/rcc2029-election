@@ -6,22 +6,28 @@ export async function POST(request: Request) {
     // 1. Capture the request data
     const { email, token, selectedCandidates } = await request.json();
 
+    // Enforce exactly ONE candidate for the by-election
+    if (!Array.isArray(selectedCandidates) || selectedCandidates.length !== 1) {
+      return NextResponse.json(
+        { error: "You must select exactly one candidate." },
+        { status: 400 }
+      );
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 2. Verify voter authorization using ilike for case-insensitive token matching
-    // This allows tokens to be accepted whether they are typed in upper or lower case
+    // 2. Verify voter authorization
     const { data: voter, error: voterError } = await supabase
       .from('voters')
       .select('has_voted, access_token')
       .eq('email', email)
-      .ilike('access_token', token) 
+      .ilike('access_token', token)
       .single();
 
     if (voterError || !voter) {
-      // If no row is found, it means either the email is wrong OR the token is wrong
       return NextResponse.json({ error: "Invalid credentials. Access Denied." }, { status: 403 });
     }
 
