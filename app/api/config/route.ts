@@ -39,7 +39,7 @@ export async function GET() {
 
     // Voting: 28 October, 9 PM to 29 October, 9 PM (24 hours)
     const VOTING_START = CONCERNS_END;
-    const VOTING_END = new Date('2026-10-29T12:00:00+05:30');
+    const VOTING_END = new Date('2026-10-29T21:00:00+05:30');
 
     // 1. Autonomous Phase Logic
 
