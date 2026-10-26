@@ -26,12 +26,12 @@ export async function GET() {
     // RCC 2029 By-Election Timeline (IST)
 
     // Nominations: 27 October, 9 AM to 28 October, 9 AM (24 hours)
-    const NOMINATION_START = new Date('2026-10-27T09:00:00+05:30');
-    const NOMINATION_END = new Date('2026-10-28T09:00:00+05:30');
+    const NOMINATION_START = new Date('2026-10-27T00:00:00+05:30');
+    const NOMINATION_END = new Date('2026-10-28T00:00:00+05:30');
 
     // Concerns: 28 October, 9 AM to 9 PM (12 hours)
     const CONCERNS_START = NOMINATION_END;
-    const CONCERNS_END = new Date('2026-10-28T21:00:00+05:30');
+    const CONCERNS_END = new Date('2026-10-28T12:00:00+05:30');
 
     // Withdrawal and Concerns Windows run concurrently
     const WITHDRAWAL_START = CONCERNS_START;
@@ -39,7 +39,7 @@ export async function GET() {
 
     // Voting: 28 October, 9 PM to 29 October, 9 PM (24 hours)
     const VOTING_START = CONCERNS_END;
-    const VOTING_END = new Date('2026-10-29T21:00:00+05:30');
+    const VOTING_END = new Date('2026-10-29T12:00:00+05:30');
 
     // 1. Autonomous Phase Logic
 
